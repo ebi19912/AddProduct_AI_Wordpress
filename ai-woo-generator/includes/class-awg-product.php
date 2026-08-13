@@ -59,9 +59,12 @@ class AWG_Product {
             $post_content .= "\n\n<h3>نقد و بررسی</h3>\n" . $review;
         }
 
+        $short_description = isset( $data['short_description'] ) ? wp_kses( $data['short_description'], $allowed_html ) : '';
+
         $post_data = array(
             'post_title'   => sanitize_text_field( $data['title'] ),
             'post_content' => $post_content,
+            'post_excerpt' => $short_description,
             'post_status'  => 'draft',
             'post_type'    => 'product',
         );
@@ -88,6 +91,25 @@ class AWG_Product {
             }
             if ( ! empty( $cat_ids ) ) {
                 wp_set_object_terms( $post_id, $cat_ids, 'product_cat' );
+            }
+        }
+
+        // تنظیم برچسب‌ها
+        if ( ! empty( $data['tags'] ) && is_array( $data['tags'] ) ) {
+            $tag_ids = array();
+            foreach ( $data['tags'] as $tag_name ) {
+                $term = term_exists( $tag_name, 'product_tag' );
+                if ( $term !== 0 && $term !== null ) {
+                    $tag_ids[] = intval( $term['term_id'] );
+                } else {
+                    $new_term = wp_insert_term( $tag_name, 'product_tag' );
+                    if ( ! is_wp_error( $new_term ) ) {
+                        $tag_ids[] = intval( $new_term['term_id'] );
+                    }
+                }
+            }
+            if ( ! empty( $tag_ids ) ) {
+                wp_set_object_terms( $post_id, $tag_ids, 'product_tag' );
             }
         }
 
